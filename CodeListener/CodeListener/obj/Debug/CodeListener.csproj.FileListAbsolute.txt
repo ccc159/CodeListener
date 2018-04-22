@@ -1,0 +1,9 @@
+C:\Users\jingcheng\Desktop\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.csprojResolveAssemblyReference.cache
+C:\Users\jingcheng\Desktop\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.csproj.CoreCompileInputs.cache
+C:\Users\jingcheng\Desktop\CodeListener\CodeListener\CodeListener\bin\CodeListener.dll
+C:\Users\jingcheng\Desktop\CodeListener\CodeListener\CodeListener\bin\CodeListener.pdb
+C:\Users\jingcheng\Desktop\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.dll
+C:\Users\jingcheng\Desktop\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.pdb
+C:\Users\jingcheng\Desktop\CodeListener\CodeListener\CodeListener\bin\Microsoft.Dynamic.dll
+C:\Users\jingcheng\Desktop\CodeListener\CodeListener\CodeListener\bin\Microsoft.Scripting.dll
+C:\Users\jingcheng\Desktop\CodeListener\CodeListener\CodeListener\bin\IronPython.dll

@@ -24,6 +24,7 @@ namespace CodeListener
             try
             {
                 stream.Write(errMsgBytes, 0, errMsgBytes.Length);
+                stream.Close();
             }
             catch (Exception exception)
             {

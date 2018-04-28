@@ -164,11 +164,6 @@ namespace CodeListener
                     }
                     catch (Exception exception)
                     {
-<<<<<<< HEAD
-                        string message = "unhandled exception:\n" + exception.Message;
-                        // send error msg back to client
-                        PrintToVSCode(message);
-=======
                         try
                         {
                             // parse the exception into messages
@@ -198,8 +193,6 @@ namespace CodeListener
                             // send error msg back to client
                             PrintToVSCode(message);
                         }
-                        
->>>>>>> 768564a16a0c6ea98eadb72600a691702b80f767
                     }
                     
                 });

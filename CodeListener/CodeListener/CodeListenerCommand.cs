@@ -163,7 +163,7 @@ namespace CodeListener
                     }
                     catch (Exception exception)
                     {
-                        string message = exception.Message;
+                        string message = "unhandled exception:\n" + exception.Message;
                         // send error msg back to client
                         PrintToVSCode(message);
                     }

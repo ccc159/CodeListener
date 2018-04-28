@@ -137,7 +137,8 @@ namespace CodeListener
                             $"SyntaxError: {exception.Message}\n Line {exception.Line}, \"{exception.SourcePath}\"\n{sourceLine}";
                         PrintToVSCode(message);
                     }
-                    catch (IronPython.Runtime.UnboundNameException exception)
+                    // known two exceptions
+                    catch (Exception exception) when ( exception is IronPython.Runtime.UnboundNameException || exception is IronPython.Runtime.Exceptions.ImportException )
                     {
                         // parse the exception into messages
                         var values = exception.Data.Values;
@@ -163,9 +164,42 @@ namespace CodeListener
                     }
                     catch (Exception exception)
                     {
+<<<<<<< HEAD
                         string message = "unhandled exception:\n" + exception.Message;
                         // send error msg back to client
                         PrintToVSCode(message);
+=======
+                        try
+                        {
+                            // parse the exception into messages
+                            var values = exception.Data.Values;
+                            var valuesarr = new object[values.Count];
+                            values.CopyTo(valuesarr, 0);
+                            string errMsg = $"Message: {exception.Message}\n";
+                            string errTraces = "Traceback:\n";
+
+                            var infos = (Microsoft.Scripting.Interpreter.InterpretedFrameInfo[])(valuesarr[0]);
+                            for (int j = 0; j < infos.Length; j++)
+                            {
+                                var debugInfo = infos[j].DebugInfo;
+                                errTraces +=
+                                    $"    Line {debugInfo.StartLine} - {debugInfo.EndLine}, \"{debugInfo.FileName}\"\n";
+                            }
+
+                            // the error msg
+                            string message = errMsg + errTraces;
+
+                            // send error msg back to client
+                            PrintToVSCode(message);
+                        }
+                        catch (Exception e1)
+                        {
+                            string message = "Unhandeled exception:\n" + exception.Message;
+                            // send error msg back to client
+                            PrintToVSCode(message);
+                        }
+                        
+>>>>>>> 768564a16a0c6ea98eadb72600a691702b80f767
                     }
                     
                 });

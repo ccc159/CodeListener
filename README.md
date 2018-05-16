@@ -1,6 +1,6 @@
 # CodeListener
 
-Codelistener is part of the plugin [RhinoPythonEditor](http://code.d2p.ch/D2P_designtoproduction/RhinoPythonEditor). It is the RhinoPython server that runs in Rhino that listens to VS Code editor.
+Codelistener is part of the plugin [RhinoPython](https://github.com/ccc159/PythonScript). It is the RhinoPython server that runs in Rhino that listens to VS Code editor.
 
 ## Installation & Usage
 

@@ -1,23 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Mime;
 using System.Net.Sockets;
-using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text;
 using Rhino;
 using Rhino.Commands;
 using Rhino.Geometry;
-using Rhino.Input;
-using Rhino.Input.Custom;
-using System.Threading;
+using System.Runtime.Serialization.Json;
 using System.Windows;
 using Rhino.Runtime;
-using IronPython.Hosting;
-using Microsoft.Scripting.Hosting;
 
 
 namespace CodeListener
@@ -26,7 +20,6 @@ namespace CodeListener
     {
         private static BackgroundWorker _tcpServerWorker;
         private Application _app;
-        private string _output;
 
         public CodeListenerCommand()
         {
@@ -73,13 +66,13 @@ namespace CodeListener
         }
 
         // fire this function when the background worker has stopped
-        void TcpServerWorkerRunTcpServerWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        protected void TcpServerWorkerRunTcpServerWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             RhinoApp.WriteLine("VS Code Listener stopped.", EnglishName);
         }
 
         // the main listener function
-        void TcpServerWorkerListening(object sender, DoWorkEventArgs e)
+        protected void TcpServerWorkerListening(object sender, DoWorkEventArgs e)
         {
             //---listen at the specified IP and port no.---
             const int portNo = 614;
@@ -118,100 +111,112 @@ namespace CodeListener
                     msg.Append(Convert.ToChar(b).ToString());
                 }
 
-                string path = @msg.ToString();
+                // parse the received message into C# Object
+                string msgString = msg.ToString();
+                MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(msgString));
+                DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(msgObject));
+                msgObject msgObj = ser.ReadObject(ms) as msgObject;
+                ms.Close();
 
+                // invoke the main task in the main thread
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     // create python script runner
                     PythonScript myScript = PythonScript.Create();
-
-                    _output = "";
+                    // redirect output to _output field
                     myScript.Output = PrintToVSCode;
+                    FeedbackSender feedbackSender = new FeedbackSender(nwStream);
+                    this.GotCodeFeekBack += feedbackSender.OnGotCodeFeedBack;
 
-                    //// create a new python scriptengine with trace and frame enabled
-                    //Dictionary<string, object> options = new Dictionary<string, object>();
-                    //options["Debug"] = true;
-                    //options["Tracing"] = true;
-                    //options["Frames"] = true;
-                    //options["FullFrames"] = true;
-
-                    //ScriptEngine myScriptEngine = Python.CreateEngine(options);
-
-                    //// create a output redirector
-                    //MemoryStream ms = new MemoryStream();
-                    //myScriptEngine.Runtime.IO.SetOutput(ms, new StreamWriter(ms));
-
-                    //// load rhino assembly
-                    //myScriptEngine.Runtime.LoadAssembly(Assembly.LoadFrom(@"C:\Program Files\Rhinoceros 5 (64-bit)\System\RhinoCommon.dll"));
-
-                    //// load extra python libraries
-                    //ICollection<string> paths = myScriptEngine.GetSearchPaths();
-                    //List<string> newpaths = new List<string>()
-                    //{
-                    //    @"C:\Program Files (x86)\IronPython 2.7\Lib",
-                    //    @"C:\Program Files\Rhinoceros 5 (64-bit)\Plug-ins\IronPython\Lib",
-                    //    @"C:\Users\jch\AppData\Roaming\McNeel\Rhinoceros\5.0\Plug-ins\IronPython (814d908a-e25c-493d-97e9-ee3861957f49)\settings\lib",
-                    //    @"C:\Users\jch\AppData\Roaming\McNeel\Rhinoceros\5.0\scripts"
-                    //};
-                    //foreach (string newpath in newpaths)
-                    //{
-                    //    paths.Add(newpath);
-                    //}
-                    //myScriptEngine.SetSearchPaths(paths);
-                    //ScriptScope scope = myScriptEngine.CreateScope();
-
-                    try
+                    // if flagged reset, then reset the script engine.
+                    if (msgObj.reset)
                     {
-                        // run self python script engine
-                        //myScriptEngine.ExecuteFile(path, scope);
-                        //string str = ReadFromStream(ms);
-                        //RhinoApp.WriteLine(str);
-                        //PrintToVSCode(str);
-
-                        // run pythonscript
-                        myScript.ExecuteFile(path);
-                        SendFeedback(_output, nwStream);
+                        ResetScriptEngine.ResetEngine();
                     }
-                    catch (Exception ee)
+
+                    // if it is not a temp folder, add the folder to python library path
+                    if (!msgObj.temp)
                     {
-                        var error = myScript.GetStackTraceFromException(ee);
-                        string message = ee.Message + "\n" + error;
-                        // send error msg back to client
-                        SendFeedback(message, nwStream);
+                        string pythonFilePath = Path.GetDirectoryName(msgObj.filename);
+                        string code = string.Format("import sys\nimport os\nif \"{0}\" not in sys.path: sys.path.append(\"{0}\")", pythonFilePath);
+                        try
+                        {
+                            myScript.ExecuteScript(code);
+                        }
+                        catch (Exception exception)
+                        {
+                            PrintToVSCode(exception.Message);
+                        }
+                    }
+
+                    // determines if run actual script
+                    if (msgObj.run)
+                    {
+                        try
+                        {
+                            myScript.ExecuteFile(msgObj.filename);
+                        }
+                        catch (Exception ex)
+                        {
+                            // get the exception message
+                            var error = myScript.GetStackTraceFromException(ex);
+                            string message = ex.Message + "\n" + error;
+                            // send exception msg back to VS Code
+                            PrintToVSCode(message);
+                        }
+                        finally
+                        {
+                            CloseConnection(nwStream);
+                        }
+                    }
+                    else
+                    {
+                        CloseConnection(nwStream);
                     }
                 });
             }
         }
 
-        private static string ReadFromStream(MemoryStream ms)
+        public class GotCodeFeedbackEventArgs : EventArgs
         {
-            int length = (int)ms.Length;
-            Byte[] bytes = new Byte[length];
-            ms.Seek(0, SeekOrigin.Begin);
-            ms.Read(bytes, 0, (int)ms.Length);
-            return Encoding.GetEncoding("utf-8").GetString(bytes, 0, (int)ms.Length);
+            public string Message { get; set; }
         }
 
+        public delegate void CodeFeedBackEventHandler(object source, GotCodeFeedbackEventArgs e);
+
+        public event CodeFeedBackEventHandler GotCodeFeekBack;
+
+        protected virtual void OnGotCodeFeedBack(GotCodeFeedbackEventArgs e)
+        {
+            GotCodeFeekBack?.Invoke(this, e);
+        }
+
+        // add the action to redirect output to VS Code
         protected void PrintToVSCode(string m)
         {
             RhinoApp.Write(m);
-            _output += m;
+            GotCodeFeedbackEventArgs arg = new GotCodeFeedbackEventArgs { Message = m };
+            OnGotCodeFeedBack(arg);
         }
 
-        protected void SendFeedback(string msg, NetworkStream stream)
+        // close connection
+        protected void CloseConnection(NetworkStream stream)
         {
-            // Process the data sent by the client.
-            byte[] errMsgBytes = Encoding.ASCII.GetBytes(msg);
-            // Send back a response.
-            try
-            {
-                stream.Write(errMsgBytes, 0, errMsgBytes.Length);
-                stream.Close();
-            }
-            catch (Exception exception)
-            {
-                stream.Close();
-            }
+            stream.Close();
         }
+    }
+
+    // define the message object structure that received from VS Code
+    [DataContract]
+    public class msgObject
+    {
+        [DataMember]
+        internal bool run;
+        [DataMember]
+        internal bool temp;
+        [DataMember]
+        internal bool reset;
+        [DataMember]
+        internal string filename;
     }
 }

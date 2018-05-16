@@ -16,6 +16,8 @@ using Rhino.Input.Custom;
 using System.Threading;
 using System.Windows;
 using Rhino.Runtime;
+using IronPython.Hosting;
+using Microsoft.Scripting.Hosting;
 
 
 namespace CodeListener
@@ -24,6 +26,7 @@ namespace CodeListener
     {
         private static BackgroundWorker _tcpServerWorker;
         private Application _app;
+        private string _output;
 
         public CodeListenerCommand()
         {
@@ -53,6 +56,7 @@ namespace CodeListener
                 _app = new Application();
             }
 
+            // set up the listenner
             if (_tcpServerWorker != null && _tcpServerWorker.IsBusy)
             {
                 RhinoApp.WriteLine("VS Code Listener is running.", EnglishName);
@@ -68,11 +72,13 @@ namespace CodeListener
             return Result.Success;
         }
 
+        // fire this function when the background worker has stopped
         void TcpServerWorkerRunTcpServerWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             RhinoApp.WriteLine("VS Code Listener stopped.", EnglishName);
         }
 
+        // the main listener function
         void TcpServerWorkerListening(object sender, DoWorkEventArgs e)
         {
             //---listen at the specified IP and port no.---
@@ -118,107 +124,94 @@ namespace CodeListener
                 {
                     // create python script runner
                     PythonScript myScript = PythonScript.Create();
+
+                    _output = "";
                     myScript.Output = PrintToVSCode;
-                    FeedbackSender feedbackSender = new FeedbackSender(nwStream);
-                    this.GotCodeFeekBack += feedbackSender.OnGotCodeFeedBack;
+
+                    //// create a new python scriptengine with trace and frame enabled
+                    //Dictionary<string, object> options = new Dictionary<string, object>();
+                    //options["Debug"] = true;
+                    //options["Tracing"] = true;
+                    //options["Frames"] = true;
+                    //options["FullFrames"] = true;
+
+                    //ScriptEngine myScriptEngine = Python.CreateEngine(options);
+
+                    //// create a output redirector
+                    //MemoryStream ms = new MemoryStream();
+                    //myScriptEngine.Runtime.IO.SetOutput(ms, new StreamWriter(ms));
+
+                    //// load rhino assembly
+                    //myScriptEngine.Runtime.LoadAssembly(Assembly.LoadFrom(@"C:\Program Files\Rhinoceros 5 (64-bit)\System\RhinoCommon.dll"));
+
+                    //// load extra python libraries
+                    //ICollection<string> paths = myScriptEngine.GetSearchPaths();
+                    //List<string> newpaths = new List<string>()
+                    //{
+                    //    @"C:\Program Files (x86)\IronPython 2.7\Lib",
+                    //    @"C:\Program Files\Rhinoceros 5 (64-bit)\Plug-ins\IronPython\Lib",
+                    //    @"C:\Users\jch\AppData\Roaming\McNeel\Rhinoceros\5.0\Plug-ins\IronPython (814d908a-e25c-493d-97e9-ee3861957f49)\settings\lib",
+                    //    @"C:\Users\jch\AppData\Roaming\McNeel\Rhinoceros\5.0\scripts"
+                    //};
+                    //foreach (string newpath in newpaths)
+                    //{
+                    //    paths.Add(newpath);
+                    //}
+                    //myScriptEngine.SetSearchPaths(paths);
+                    //ScriptScope scope = myScriptEngine.CreateScope();
 
                     try
                     {
+                        // run self python script engine
+                        //myScriptEngine.ExecuteFile(path, scope);
+                        //string str = ReadFromStream(ms);
+                        //RhinoApp.WriteLine(str);
+                        //PrintToVSCode(str);
+
+                        // run pythonscript
                         myScript.ExecuteFile(path);
+                        SendFeedback(_output, nwStream);
                     }
-                    catch (Microsoft.Scripting.SyntaxErrorException exception)
+                    catch (Exception ee)
                     {
-                        FieldInfo sorceLineInfo = exception.GetType()
-                            .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                            .Single(f => f.Name == "_sourceLine");
-                        string sourceLine = sorceLineInfo.GetValue(exception) as string;
-
-                        string message =
-                            $"SyntaxError: {exception.Message}\n Line {exception.Line}, \"{exception.SourcePath}\"\n{sourceLine}";
-                        PrintToVSCode(message);
-                    }
-                    // known two exceptions
-                    catch (Exception exception) when ( exception is IronPython.Runtime.UnboundNameException || exception is IronPython.Runtime.Exceptions.ImportException )
-                    {
-                        // parse the exception into messages
-                        var values = exception.Data.Values;
-                        var valuesarr = new object[values.Count];
-                        values.CopyTo(valuesarr, 0);
-                        string errMsg = $"Message: {exception.Message}\n";
-                        string errTraces = "Traceback:\n";
-
-                        var infos = (Microsoft.Scripting.Interpreter.InterpretedFrameInfo[]) (valuesarr[0]);
-                        for (int j = 0; j < infos.Length; j++)
-                        {
-                            var debugInfo = infos[j].DebugInfo;
-                            errTraces +=
-                                $"    Line {debugInfo.StartLine} - {debugInfo.EndLine}, \"{debugInfo.FileName}\"\n";
-                        }
-
-                        // the error msg
-                        string message = errMsg + errTraces;
-
+                        var error = myScript.GetStackTraceFromException(ee);
+                        string message = ee.Message + "\n" + error;
                         // send error msg back to client
-                        PrintToVSCode(message);
-
+                        SendFeedback(message, nwStream);
                     }
-                    catch (Exception exception)
-                    {
-                        try
-                        {
-                            // parse the exception into messages
-                            var values = exception.Data.Values;
-                            var valuesarr = new object[values.Count];
-                            values.CopyTo(valuesarr, 0);
-                            string errMsg = $"Message: {exception.Message}\n";
-                            string errTraces = "Traceback:\n";
-
-                            var infos = (Microsoft.Scripting.Interpreter.InterpretedFrameInfo[])(valuesarr[0]);
-                            for (int j = 0; j < infos.Length; j++)
-                            {
-                                var debugInfo = infos[j].DebugInfo;
-                                errTraces +=
-                                    $"    Line {debugInfo.StartLine} - {debugInfo.EndLine}, \"{debugInfo.FileName}\"\n";
-                            }
-
-                            // the error msg
-                            string message = errMsg + errTraces;
-
-                            // send error msg back to client
-                            PrintToVSCode(message);
-                        }
-                        catch (Exception e1)
-                        {
-                            string message = "Unhandeled exception:\n" + exception.Message;
-                            // send error msg back to client
-                            PrintToVSCode(message);
-                        }
-                        
-                    }
-                    
                 });
             }
         }
 
-        public class GotCodeFeedbackEventArgs : EventArgs
+        private static string ReadFromStream(MemoryStream ms)
         {
-            public string Message { get; set; }
-        }
-
-        public delegate void CodeFeedBackEventHandler(object source, GotCodeFeedbackEventArgs e);
-
-        public event CodeFeedBackEventHandler GotCodeFeekBack;
-
-        protected virtual void OnGotCodeFeedBack(GotCodeFeedbackEventArgs e)
-        {
-            GotCodeFeekBack?.Invoke(this, e);
+            int length = (int)ms.Length;
+            Byte[] bytes = new Byte[length];
+            ms.Seek(0, SeekOrigin.Begin);
+            ms.Read(bytes, 0, (int)ms.Length);
+            return Encoding.GetEncoding("utf-8").GetString(bytes, 0, (int)ms.Length);
         }
 
         protected void PrintToVSCode(string m)
         {
-            GotCodeFeedbackEventArgs arg = new GotCodeFeedbackEventArgs { Message = m };
-            OnGotCodeFeedBack(arg);
+            RhinoApp.Write(m);
+            _output += m;
         }
 
+        protected void SendFeedback(string msg, NetworkStream stream)
+        {
+            // Process the data sent by the client.
+            byte[] errMsgBytes = Encoding.ASCII.GetBytes(msg);
+            // Send back a response.
+            try
+            {
+                stream.Write(errMsgBytes, 0, errMsgBytes.Length);
+                stream.Close();
+            }
+            catch (Exception exception)
+            {
+                stream.Close();
+            }
+        }
     }
 }

@@ -10,6 +10,7 @@ using Rhino;
 using Rhino.Commands;
 using Rhino.Geometry;
 using System.Runtime.Serialization.Json;
+using System.Text.RegularExpressions;
 using System.Windows;
 using Rhino.Runtime;
 
@@ -18,7 +19,9 @@ namespace CodeListener
 {
     public class CodeListenerCommand : Command
     {
-        private static BackgroundWorker _tcpServerWorker;
+        internal static BackgroundWorker _tcpServerWorker;
+        private RhinoDoc _idoc;
+        private TcpListener _server;
         private Application _app;
 
         public CodeListenerCommand()
@@ -43,6 +46,7 @@ namespace CodeListener
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
+            _idoc = doc;
             // Start WPF UI Dispatcher if not running.
             if (_app == null)
             {
@@ -61,6 +65,7 @@ namespace CodeListener
             _tcpServerWorker.DoWork += TcpServerWorkerListening;
             _tcpServerWorker.RunWorkerCompleted += TcpServerWorkerRunTcpServerWorkerCompleted;
             _tcpServerWorker.RunWorkerAsync();
+            
 
             return Result.Success;
         }
@@ -68,7 +73,9 @@ namespace CodeListener
         // fire this function when the background worker has stopped
         protected void TcpServerWorkerRunTcpServerWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            RhinoApp.WriteLine("VS Code Listener stopped.", EnglishName);
+            _tcpServerWorker.Dispose();
+            _tcpServerWorker = null;
+            RhinoApp.WriteLine("VS Code Listener stopped. Please run CodeListener again.");
         }
 
         // the main listener function
@@ -77,11 +84,10 @@ namespace CodeListener
             //---listen at the specified IP and port no.---
             const int portNo = 614;
             IPAddress serverIp = IPAddress.Parse("127.0.0.1");
-            TcpListener server = new TcpListener(serverIp, portNo);
-            
+            if (_server == null) _server = new TcpListener(serverIp, portNo);  
             try
             {
-                server.Start();
+                _server.Start();
                 RhinoApp.WriteLine("VS Code Listener Started...");
             }
             catch (Exception err)
@@ -92,7 +98,7 @@ namespace CodeListener
             while (true)
             {
                 // incoming client connected
-                TcpClient client = server.AcceptTcpClient();
+                TcpClient client = _server.AcceptTcpClient();
 
                 // get the incoming data through a network stream
                 NetworkStream nwStream = client.GetStream();
@@ -113,9 +119,20 @@ namespace CodeListener
 
                 // parse the received message into C# Object
                 string msgString = msg.ToString();
+                msgString = Regex.Split(msgString, "}")[0] + "}";
                 MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(msgString));
                 DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(msgObject));
-                msgObject msgObj = ser.ReadObject(ms) as msgObject;
+                msgObject msgObj;
+                try
+                {
+                    msgObj = ser.ReadObject(ms) as msgObject;
+                }
+                catch (Exception ex)
+                {
+                    RhinoApp.WriteLine("Received invalid data, please try again.");
+                    return;
+                }
+                
                 ms.Close();
 
                 // invoke the main task in the main thread
@@ -126,7 +143,7 @@ namespace CodeListener
                     // redirect output to _output field
                     myScript.Output = PrintToVSCode;
                     FeedbackSender feedbackSender = new FeedbackSender(nwStream);
-                    this.GotCodeFeekBack += feedbackSender.OnGotCodeFeedBack;
+                    GotCodeFeekBack += feedbackSender.OnGotCodeFeedBack;
 
                     // if flagged reset, then reset the script engine.
                     if (msgObj.reset)
@@ -154,7 +171,9 @@ namespace CodeListener
                     {
                         try
                         {
+                            uint sn = _idoc.BeginUndoRecord("VS Code execution");
                             myScript.ExecuteFile(msgObj.filename);
+                            _idoc.EndUndoRecord(sn);
                         }
                         catch (Exception ex)
                         {

@@ -68,6 +68,7 @@
     <Compile Include="CodeListenerPlugIn.cs" />
     <Compile Include="FeedbackSender.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResetCodeListener.cs" />
     <Compile Include="ResetScriptEngine.cs" />
   </ItemGroup>
   <ItemGroup>

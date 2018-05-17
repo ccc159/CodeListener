@@ -171,8 +171,11 @@ namespace CodeListener
                     {
                         try
                         {
+                            if (msgObj.minimize) Utils.MinimizeVSCodeWindow();
                             uint sn = _idoc.BeginUndoRecord("VS Code execution");
                             myScript.ExecuteFile(msgObj.filename);
+                            // fix the rs.Prompt bug
+                            myScript.ExecuteScript("import rhinoscriptsyntax as rs\nrs.Prompt('Command:')");
                             _idoc.EndUndoRecord(sn);
                         }
                         catch (Exception ex)
@@ -186,6 +189,7 @@ namespace CodeListener
                         finally
                         {
                             CloseConnection(nwStream);
+                            if (msgObj.minimize) Utils.RestoreVSCodeWindow();
                         }
                     }
                     else
@@ -235,6 +239,8 @@ namespace CodeListener
         internal bool temp;
         [DataMember]
         internal bool reset;
+        [DataMember]
+        internal bool minimize;
         [DataMember]
         internal string filename;
     }

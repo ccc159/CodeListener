@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="CodeListenerCommand.cs" />
     <Compile Include="CodeListenerPlugIn.cs" />
+    <Compile Include="CodeListenerVersion.cs" />
     <Compile Include="FeedbackSender.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResetCodeListener.cs" />

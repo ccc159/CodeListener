@@ -14,7 +14,6 @@ C:\Projects\CodeListener\CodeListener\CodeListener\bin\Microsoft.Dynamic.dll
 C:\Projects\CodeListener\CodeListener\CodeListener\bin\Microsoft.Scripting.dll
 C:\Projects\CodeListener\CodeListener\CodeListener\bin\Microsoft.Scripting.Metadata.dll
 C:\Projects\CodeListener\CodeListener\CodeListener\bin\Microsoft.Scripting.Metadata.xml
-C:\Projects\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.csprojResolveAssemblyReference.cache
 C:\Projects\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.dll
 C:\Projects\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.pdb
 C:\tmp\CodeListener\CodeListener\CodeListener\bin\CodeListener.dll
@@ -29,3 +28,4 @@ C:\tmp\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.dll
 C:\tmp\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.pdb
 C:\Projects\CodeListener\CodeListener\CodeListener\bin\RhinoPythonHost.dll
 C:\Projects\CodeListener\CodeListener\CodeListener\bin\RhinoPythonHost.pdb
+C:\Projects\CodeListener\CodeListener\CodeListener\obj\Debug\CodeListener.csprojResolveAssemblyReference.cache

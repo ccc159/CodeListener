@@ -169,14 +169,12 @@ namespace CodeListener
                     // determines if run actual script
                     if (msgObj.run)
                     {
+                        uint sn = _idoc.BeginUndoRecord("VS Code execution");
                         try
                         {
                             if (msgObj.minimize) Utils.MinimizeVSCodeWindow();
-                            uint sn = _idoc.BeginUndoRecord("VS Code execution");
+                            
                             myScript.ExecuteFile(msgObj.filename);
-                            // fix the rs.Prompt bug
-                            myScript.ExecuteScript("import rhinoscriptsyntax as rs\nrs.Prompt('Command:')");
-                            _idoc.EndUndoRecord(sn);
                         }
                         catch (Exception ex)
                         {
@@ -189,7 +187,10 @@ namespace CodeListener
                         finally
                         {
                             CloseConnection(nwStream);
+                            _idoc.EndUndoRecord(sn);
                             if (msgObj.minimize) Utils.RestoreVSCodeWindow();
+                            // fix the rs.Prompt bug
+                            RhinoApp.SetCommandPrompt("Command");
                         }
                     }
                     else

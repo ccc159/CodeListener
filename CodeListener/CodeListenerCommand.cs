@@ -203,8 +203,6 @@ namespace CodeListener
                         var sn_start = RhinoObject.NextRuntimeSerialNumber;
                         try
                         {
-                            if (msgObj.minimize) Utils.MinimizeVSCodeWindow();
-                            
                             myScript.ExecuteFile(msgObj.filename);
                         }
                         catch (Exception ex)
@@ -219,7 +217,6 @@ namespace CodeListener
                         {
                             CloseConnection(nwStream);
                             _idoc.EndUndoRecord(sn);
-                            if (msgObj.minimize) Utils.RestoreVSCodeWindow();
                             // fix the rs.Prompt bug
                             RhinoApp.SetCommandPrompt("Command");
 
@@ -324,8 +321,6 @@ namespace CodeListener
         internal bool temp;
         [DataMember]
         internal bool reset;
-        [DataMember]
-        internal bool minimize;
         [DataMember]
         internal string filename;
     }

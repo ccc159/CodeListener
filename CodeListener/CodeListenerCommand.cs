@@ -18,6 +18,11 @@ using System.Windows;
 using Rhino.Display;
 using Rhino.DocObjects;
 using Rhino.Runtime;
+using Command = Rhino.Commands.Command;
+using MessageBox = System.Windows.MessageBox;
+#if RHINO6
+using Eto.Forms;
+#endif
 
 
 namespace CodeListener
@@ -27,7 +32,11 @@ namespace CodeListener
         internal static BackgroundWorker _tcpServerWorker;
         private RhinoDoc _idoc;
         internal static TcpListener _server;
+
+        #if RHINO5
         private Application _app;
+        #endif
+
 
         public CodeListenerCommand()
         {
@@ -53,12 +62,13 @@ namespace CodeListener
         {
             _idoc = doc;
             CheckLatestVersion();
+            #if RHINO5
             // Start WPF UI Dispatcher if not running.
             if (_app == null)
             {
-                _app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                _app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };     
             }
-
+            #endif
             // set up the listenner
             if (_tcpServerWorker != null && _tcpServerWorker.IsBusy)
             {
@@ -152,7 +162,11 @@ namespace CodeListener
                 ms.Close();
 
                 // invoke the main task in the main thread
+                #if RHINO5
                 _app.Dispatcher.Invoke(() =>
+                #else
+                Eto.Forms.Application.Instance.Invoke(() =>
+                #endif
                 {
                     // create python script runner
                     PythonScript myScript = PythonScript.Create();

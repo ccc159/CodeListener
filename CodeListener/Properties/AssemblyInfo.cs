@@ -1,18 +1,19 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using CodeListener;
 using Rhino.PlugIns;
 
 // Plug-in Description Attributes - all of these are optional.
 // These will show in Rhino's option dialog, in the tab Plug-ins.
-[assembly: PlugInDescription(DescriptionType.Address, "-")]
-[assembly: PlugInDescription(DescriptionType.Country, "-")]
-[assembly: PlugInDescription(DescriptionType.Email, "-")]
-[assembly: PlugInDescription(DescriptionType.Phone, "-")]
-[assembly: PlugInDescription(DescriptionType.Fax, "-")]
-[assembly: PlugInDescription(DescriptionType.Organization, "-")]
-[assembly: PlugInDescription(DescriptionType.UpdateUrl, "-")]
-[assembly: PlugInDescription(DescriptionType.WebSite, "-")]
+[assembly: PlugInDescription(DescriptionType.Address, "Seestrasse 78, 8703 Erlenbach/Zürich")]
+[assembly: PlugInDescription(DescriptionType.Country, "Switzerland")]
+[assembly: PlugInDescription(DescriptionType.Email, "info@designtoproduction.com")]
+[assembly: PlugInDescription(DescriptionType.Phone, "+41 (0) 44 914 74 90")]
+[assembly: PlugInDescription(DescriptionType.Fax, "+41 (0) 44 914 74 99")]
+[assembly: PlugInDescription(DescriptionType.Organization, "Design-to-Production GmbH")]
+[assembly: PlugInDescription(DescriptionType.UpdateUrl, "https://github.com/ccc159/CodeListener")]
+[assembly: PlugInDescription(DescriptionType.WebSite, "http://designtoproduction.com/")]
 
 // Icons should be Windows .ico files and contain 32-bit images in the following sizes: 16, 24, 32, 48, and 256.
 // This is a Rhino 6-only description.
@@ -26,7 +27,7 @@ using Rhino.PlugIns;
 [assembly: AssemblyDescription("CodeListener utility plug-in")]
 
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Design-To-Production")]
 [assembly: AssemblyProduct("CodeListener")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
@@ -51,8 +52,8 @@ using Rhino.PlugIns;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("0.1.7")]
+[assembly: AssemblyFileVersion("0.1.7")]
 
 // Make compatible with Rhino Installer Engine
 [assembly: AssemblyInformationalVersion("2")]

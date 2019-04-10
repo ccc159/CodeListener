@@ -12,7 +12,7 @@ namespace CodeListener
     {
         internal static int MAJOR = 0;
         internal static int MINOR = 1;
-        internal static int PATCH = 7;
+        internal static int PATCH = 8;
         internal static string Version = $"{MAJOR}.{MINOR}.{PATCH}";
         static CodeListenerVersion _instance;
         public CodeListenerVersion()

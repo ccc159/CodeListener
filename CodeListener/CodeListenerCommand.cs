@@ -185,7 +185,7 @@ namespace CodeListener
                     if (!msgObj.temp)
                     {
                         string pythonFilePath = Path.GetDirectoryName(msgObj.filename);
-                        string code = string.Format("import sys\nimport os\nif \"{0}\" not in sys.path: sys.path.append(\"{0}\")", pythonFilePath);
+                        string code = string.Format("import sys\nimport os\nif \"{0}\" not in sys.path: sys.path.append(\"{0}\")", pythonFilePath.Replace("\\", "\\\\"));
                         try
                         {
                             myScript.ExecuteScript(code);

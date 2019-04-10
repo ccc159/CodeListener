@@ -66,7 +66,7 @@ namespace CodeListener
             // Start WPF UI Dispatcher if not running.
             if (_app == null)
             {
-                _app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };     
+                _app = Application.Current ?? new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };     
             }
             #endif
             // set up the listenner

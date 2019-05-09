@@ -57,6 +57,7 @@
     </Reference>
     <Reference Include="IronPython">
       <HintPath>..\..\..\..\..\..\Program Files\Rhinoceros 5 (64-bit)\Plug-ins\IronPython\IronPython.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.Dynamic, Version=1.2.0.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
